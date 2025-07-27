@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>অ্যাডমিন প্যানেল</title>
+  <style>
+    body { background: #111; color: white; font-family: sans-serif; padding: 20px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h2>ভিডিও অনুমোদন</h2>
+  <div id="list"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, updateDoc, doc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCP9GGU_sJ3xbQs0TUQODMfy3uMW4vkzzo",
+      authDomain: "towhid-28aaa.firebaseapp.com",
+      projectId: "towhid-28aaa",
+      storageBucket: "towhid-28aaa.appspot.com",
+      messagingSenderId: "24350274620",
+      appId: "1:24350274620:web:abc123"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const list = document.getElementById("list");
+
+    async function loadUnapproved() {
+      const snap = await getDocs(collection(db, "videos"));
+      snap.forEach(docSnap => {
+        const v = docSnap.data();
+        if (!v.approved) {
+          list.innerHTML += `<div>
+            <strong>${v.title}</strong><br/>
+            <button onclick="approve('${docSnap.id}')">✅ অনুমোদন দিন</button>
+          </div>`;
+        }
+      });
+    }
+
+    window.approve = async (id) => {
+      await updateDoc(doc(db, "videos", id), { approved: true });
+      alert("অনুমোদিত!");
+      location.reload();
+    };
+
+    loadUnapproved();
+  </script>
+</body>
+</html>

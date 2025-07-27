@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <title>স্টুডিও</title>
+  <style>
+    body { font-family: sans-serif; background: #0e0e0e; color: white; padding: 20px; }
+    input, textarea, button { display: block; width: 300px; margin: 10px 0; padding: 10px; background: #1c1c1c; border: none; color: white; }
+    video { max-width: 100%; margin-top: 10px; }
+    .video-card { border: 1px solid #444; padding: 10px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h2>ভিডিও আপলোড করুন</h2>
+  <input type="text" id="title" placeholder="ভিডিও টাইটেল" />
+  <textarea id="desc" placeholder="বিবরণ লিখুন"></textarea>
+  <input type="file" id="videoFile" />
+  <input type="file" id="thumbFile" />
+  <button onclick="uploadVideo()">আপলোড</button>
+
+  <hr />
+  <h3>আপনার ভিডিও</h3>
+  <div id="myVideos"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCP9GGU_sJ3xbQs0TUQODMfy3uMW4vkzzo",
+      authDomain: "towhid-28aaa.firebaseapp.com",
+      projectId: "towhid-28aaa",
+      storageBucket: "towhid-28aaa.appspot.com",
+      messagingSenderId: "24350274620",
+      appId: "1:24350274620:web:abc123"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        currentUser = user;
+        loadMyVideos();
+      } else {
+        location.href = "login.html";
+      }
+    });
+
+    async function uploadVideo() {
+      const title = document.getElementById("title").value;
+      const desc = document.getElementById("desc").value;
+      const videoFile = document.getElementById("videoFile").files[0];
+      const thumbFile = document.getElementById("thumbFile").files[0];
+
+      if (!videoFile || !thumbFile || !title) return alert("সব ফিল্ড পূরণ করুন");
+
+      const videoRef = ref(storage, `videos/${Date.now()}_${videoFile.name}`);
+      const thumbRef = ref(storage, `thumbs/${Date.now()}_${thumbFile.name}`);
+
+      const videoSnap = await uploadBytes(videoRef, videoFile);
+      const thumbSnap = await uploadBytes(thumbRef, thumbFile);
+
+      const videoURL = await getDownloadURL(videoSnap.ref);
+      const thumbURL = await getDownloadURL(thumbSnap.ref);
+
+      await addDoc(collection(db, "videos"), {
+        uid: currentUser.uid,
+        title,
+        description: desc,
+        url: videoURL,
+        thumbnail: thumbURL,
+        channelName: currentUser.email,
+        likes: 0,
+        views: 0,
+        approved: false
+      });
+
+      alert("ভিডিও আপলোড হয়েছে! অ্যাডমিন অনুমোদনের অপেক্ষায়।");
+      loadMyVideos();
+    }
+
+    async function loadMyVideos() {
+      const container = document.getElementById("myVideos");
+      container.innerHTML = "লোড হচ্ছে...";
+      const q = query(collection(db, "videos"), where("uid", "==", currentUser.uid));
+      const snap = await getDocs(q);
+      container.innerHTML = "";
+      snap.forEach(docSnap => {
+        const v = docSnap.data();
+        const id = docSnap.id;
+        container.innerHTML += `
+          <div class="video-card">
+            <strong>${v.title}</strong> <br/>
+            অনুমোদিত: ${v.approved ? "হ্যাঁ" : "না"} <br/>
+            <video src="${v.url}" controls></video>
+            <button onclick="deleteVideo('${id}')">ডিলিট</button>
+          </div>
+        `;
+      });
+    }
+
+    window.deleteVideo = async function(id) {
+      await deleteDoc(doc(db, "videos", id));
+      alert("মুছে ফেলা হয়েছে");
+      loadMyVideos();
+    }
+  </script>
+</body>
+</html>

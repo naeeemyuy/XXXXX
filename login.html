@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <title>লগইন করুন</title>
+  <style>
+    body { background: #0f0f0f; color: white; display: flex; flex-direction: column; align-items: center; padding-top: 100px; font-family: sans-serif; }
+    input, button { padding: 10px; margin: 5px; width: 250px; background: #1f1f1f; border: none; color: white; }
+  </style>
+</head>
+<body>
+  <h2>আপনার একাউন্টে লগইন করুন</h2>
+  <input type="email" id="email" placeholder="ইমেইল" />
+  <input type="password" id="password" placeholder="পাসওয়ার্ড" />
+  <button onclick="login()">লগইন</button>
+  <p>নতুন? <a href="#" onclick="signup()">সাইন আপ করুন</a></p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCP9GGU_sJ3xbQs0TUQODMfy3uMW4vkzzo",
+      authDomain: "towhid-28aaa.firebaseapp.com",
+      projectId: "towhid-28aaa",
+      storageBucket: "towhid-28aaa.appspot.com",
+      messagingSenderId: "24350274620",
+      appId: "1:24350274620:web:abc123"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.login = async () => {
+      const email = emailInput.value;
+      const pass = passwordInput.value;
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        location.href = "studio.html";
+      } catch (e) {
+        alert("ভুল তথ্য!");
+      }
+    };
+
+    window.signup = async () => {
+      const email = emailInput.value;
+      const pass = passwordInput.value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        alert("রেজিস্ট্রেশন সফল!");
+      } catch (e) {
+        alert("সাইন আপ ব্যর্থ!");
+      }
+    };
+
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Trending Videos</title>
+  <style>
+    body { background: #000; color: white; padding: 20px; font-family: sans-serif; }
+    .card { margin: 10px 0; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>🔥 ট্রেন্ডিং ভিডিও</h2>
+  <div id="trendList"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, query, where
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCP9GGU_sJ3xbQs0TUQODMfy3uMW4vkzzo",
+      authDomain: "towhid-28aaa.firebaseapp.com",
+      projectId: "towhid-28aaa",
+      storageBucket: "towhid-28aaa.appspot.com",
+      messagingSenderId: "24350274620",
+      appId: "1:24350274620:web:abc123"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const trendList = document.getElementById("trendList");
+
+    async function loadTrending() {
+      const q = query(collection(db, "videos"), where("approved", "==", true));
+      const snap = await getDocs(q);
+      const videos = [];
+      snap.forEach(doc => {
+        videos.push({ id: doc.id, ...doc.data() });
+      });
+
+      videos.sort((a, b) => (b.views || 0) - (a.views || 0));
+      videos.slice(0, 10).forEach(v => {
+        trendList.innerHTML += `<div class="card" onclick="location='view.html?id=${v.id}'">
+          <strong>${v.title}</strong> <br>👁️ ${v.views || 0} | 👍 ${v.likes || 0}
+        </div>`;
+      });
+    }
+
+    loadTrending();
+  </script>
+</body>
+</html>

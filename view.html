@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ভিডিও দেখুন</title>
+  <style>
+    body { background: #0e0e0e; color: white; font-family: sans-serif; padding: 20px; }
+    video { max-width: 100%; }
+    button { padding: 6px 12px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h2 id="vTitle"></h2>
+  <video id="vPlayer" controls></video>
+  <p id="vDesc"></p>
+  <p>👁️ Views: <span id="vViews">0</span></p>
+  <button id="likeBtn">👍 Like</button>
+  <button id="subBtn">🔔 Subscribe</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, doc, getDoc, updateDoc, increment,
+      getAuth, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCP9GGU_sJ3xbQs0TUQODMfy3uMW4vkzzo",
+      authDomain: "towhid-28aaa.firebaseapp.com",
+      projectId: "towhid-28aaa",
+      storageBucket: "towhid-28aaa.appspot.com",
+      messagingSenderId: "24350274620",
+      appId: "1:24350274620:web:abc123"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const urlParams = new URLSearchParams(location.search);
+    const videoId = urlParams.get("id");
+
+    const vRef = doc(db, "videos", videoId);
+    const title = document.getElementById("vTitle");
+    const desc = document.getElementById("vDesc");
+    const player = document.getElementById("vPlayer");
+    const vViews = document.getElementById("vViews");
+    const likeBtn = document.getElementById("likeBtn");
+    const subBtn = document.getElementById("subBtn");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+    });
+
+    async function loadVideo() {
+      const snap = await getDoc(vRef);
+      if (!snap.exists() || !snap.data().approved) return alert("ভিডিও নেই!");
+
+      const v = snap.data();
+      title.textContent = v.title;
+      desc.textContent = v.description;
+      player.src = v.url;
+      vViews.textContent = v.views || 0;
+
+      await updateDoc(vRef, { views: increment(1) });
+    }
+
+    likeBtn.onclick = async () => {
+      await updateDoc(vRef, { likes: increment(1) });
+      alert("পছন্দ করা হয়েছে!");
+    };
+
+    subBtn.onclick = async () => {
+      if (!currentUser) return alert("সাবস্ক্রাইব করতে লগইন করুন");
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      let subs = userSnap.exists() && userSnap.data().subscriptions || [];
+      if (!subs.includes(videoId)) {
+        subs.push(videoId);
+        await updateDoc(userRef, { subscriptions: subs });
+        alert("সাবস্ক্রাইব করা হয়েছে!");
+      } else {
+        alert("আপনি আগেই সাবস্ক্রাইব করেছেন");
+      }
+    };
+
+    loadVideo();
+  </script>
+</body>
+</html>
